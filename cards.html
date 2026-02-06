@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Cartões - Entidades e DTOs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #e2e8f0; }
+        .data-font { font-family: 'Fira Code', monospace; }
+
+        @media print {
+            @page { margin: 1cm; size: A4; }
+            body { background: white; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .no-print { display: none !important; }
+            .page-break { page-break-after: always; }
+            /* Na impressão, garantimos que nada quebre dentro do card */
+            .card { break-inside: avoid; border: 2px solid #000 !important; box-shadow: none !important; }
+            /* Força o grid na impressão */
+            .card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        }
+
+        /* Layout em Grade de 2 Colunas para Entidades */
+        .card-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* 2 colunas iguais */
+            gap: 1rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        /* Layout em Lista (1 Coluna) para Mappers */
+        .card-list-1 {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        .card {
+            background-color: #FEF9C3; /* Amarelo (Yellow-100) */
+            border: 2px solid #ca8a04; /* Borda mais grossa */
+            padding: 1.5rem; /* Padding interno aumentado */
+            /* width: 100%; removemos width fixo para o grid funcionar */
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+        }
+        
+        .card-mapper {
+            background-color: #FFEDD5; /* Laranja (Orange-100) */
+            border: 2px solid #c2410c;
+        }
+
+        .card-header {
+            font-family: 'Inter', sans-serif;
+            font-weight: 900; /* Negrito extra */
+            text-transform: uppercase; /* Caixa Alta */
+            font-size: 1rem;
+            color: #000;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid rgba(0,0,0,0.2);
+            padding-bottom: 0.5rem;
+            letter-spacing: 0.05em;
+        }
+
+        .card-content {
+            font-size: 0.9rem; /* Fonte um pouco maior para leitura impressa */
+            color: #1f2937;
+            line-height: 1.6;
+            flex-grow: 1; /* Garante altura consistente */
+        }
+
+        /* Ajuste específico para conteúdo do mapper */
+        .card-mapper .card-content {
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body class="p-8">
+
+    <!-- Controles -->
+    <div class="no-print max-w-4xl mx-auto mb-8 bg-white p-6 rounded shadow-sm border">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Gerador de Material (Entidades em 2 Colunas)</h1>
+        <p class="text-gray-600 mb-4">Entidades organizadas em duas colunas para otimização de espaço. Mappers mantidos em lista única.</p>
+        
+        <div class="flex gap-4">
+            <button onclick="window.print()" class="bg-gray-800 hover:bg-black text-white font-bold py-2 px-6 rounded flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Imprimir Material
+            </button>
+            <button onclick="regenerateData()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded">
+                Gerar Novos Dados
+            </button>
+        </div>
+    </div>
+
+    <!-- Conteúdo -->
+    <div id="content-area" class="max-w-[210mm] mx-auto bg-white p-8 shadow min-h-screen"></div>
+
+    <script>
+        // --- Gerador de Dados Mock ---
+        const firstNames = ["Ana", "Bruno", "Carlos", "Daniela", "Eduardo", "Fernanda", "Gabriel", "Helena", "Igor", "Julia", "Lucas", "Mariana", "Nicolas", "Olivia", "Pedro", "Rafaela", "Samuel", "Tatiane", "Vitor", "Yasmin"];
+        const lastNames = ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Almeida", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro", "Martins", "Carvalho", "Mendes"];
+        const products = ["Notebook Gamer", "Mouse Sem Fio", "Teclado Mecânico", "Monitor 24pol", "Cadeira Ergonômica", "Headset USB", "Webcam HD", "SSD 1TB", "Memória RAM 16GB", "Cabo HDMI"];
+        
+        function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function randomArr(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+        function randomDate() { return `2023-${randomInt(1,12).toString().padStart(2,'0')}-${randomInt(1,28).toString().padStart(2,'0')}`; }
+        
+        function generateName() { return `${randomArr(firstNames)} ${randomArr(lastNames)}`; }
+        function generateEmail(name) { return name.toLowerCase().replace(' ', '.') + '@email.com'; }
+        function generateCPF() { return `${randomInt(100,999)}.${randomInt(100,999)}.${randomInt(100,999)}-${randomInt(10,99)}`; }
+
+        // --- Templates ---
+
+        function createCardHTML(title, id, content, isMapper = false) {
+            const cssClass = isMapper ? 'card card-mapper' : 'card';
+            return `
+                <div class="${cssClass}">
+                    <div class="card-header">
+                        ${title} #${id}
+                    </div>
+                    <div class="data-font card-content whitespace-pre-line">
+                        ${content}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSection(title, cardsHTML, isGrid = true) {
+            const layoutClass = isGrid ? 'card-grid-2' : 'card-list-1';
+            return `
+                <div class="page-break">
+                    <h2 class="text-xl font-black border-b-4 border-black mb-6 mt-8 uppercase tracking-wider">${title}</h2>
+                    <div class="${layoutClass}">
+                        ${cardsHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function regenerateData() {
+            let html = "";
+
+            // --- CONTEXTO 1 ---
+            
+            // Clientes (Entidade = Grid)
+            let clientsHTML = "";
+            for(let i=1; i<=15; i++) {
+                const name = generateName();
+                const content = `<strong>id:</strong> ${i}
+<strong>nome:</strong> "${name}"
+<strong>cpf:</strong> "${generateCPF()}"
+<strong>email:</strong> "${generateEmail(name)}"
+<strong>senha_hash:</strong> "x$9#kLm${randomInt(10,99)}"
+<strong>ativo:</strong> true
+<strong>endereco:</strong> "Rua ${randomInt(1,20)}, Nº ${randomInt(100, 999)}"`;
+                clientsHTML += createCardHTML("TB_CLIENTE", i, content);
+            }
+            html += renderSection("Contexto 1: Clientes (15)", clientsHTML, true);
+
+            // Produtos (Entidade = Grid)
+            let productsHTML = "";
+            for(let i=1; i<=20; i++) {
+                const prod = randomArr(products);
+                const price = randomInt(50, 5000);
+                const content = `<strong>id:</strong> ${i}
+<strong>nome:</strong> "${prod}"
+<strong>sku:</strong> "PROD-${randomInt(1000,9999)}"
+<strong>preco_venda:</strong> ${price}.00
+<strong>custo_aquisicao:</strong> ${Math.floor(price * 0.6)}.00
+<strong>estoque:</strong> ${randomInt(0, 50)}
+<strong>fornecedor_id:</strong> ${randomInt(1,5)}`;
+                productsHTML += createCardHTML("TB_PRODUTO", i, content);
+            }
+            html += renderSection("Contexto 1: Produtos (20)", productsHTML, true);
+
+            // Pedidos (Entidade = Grid)
+            let ordersHTML = "";
+            for(let i=1; i<=30; i++) {
+                const content = `<strong>id:</strong> ${i + 5000}
+<strong>cliente_id:</strong> ${randomInt(1, 15)}
+<strong>data_pedido:</strong> "${randomDate()} 14:30:00"
+<strong>status:</strong> "${randomArr(['PENDENTE', 'PAGO', 'ENVIADO'])}"
+<strong>total:</strong> ${randomInt(100, 2000)}.00
+<strong>gateway_transacao:</strong> "tx_${randomInt(100000,999999)}"`;
+                ordersHTML += createCardHTML("TB_PEDIDO", i, content);
+            }
+            html += renderSection("Contexto 1: Pedidos (30)", ordersHTML, true);
+
+            // Itens (Entidade = Grid)
+            let itemsHTML = "";
+            for(let i=1; i<=4; i++) {
+                const content = `<strong>id:</strong> ${i}
+<strong>pedido_id:</strong> ${5001}
+<strong>produto_id:</strong> ${randomInt(1,20)}
+<strong>quantidade:</strong> ${randomInt(1, 3)}
+<strong>preco_unitario:</strong> ${randomInt(100, 500)}.00
+<strong>desconto:</strong> 0.00`;
+                itemsHTML += createCardHTML("TB_ITEM_PEDIDO", i, content);
+            }
+            html += renderSection("Contexto 1: Itens (Exemplos)", itemsHTML, true);
+
+            // Mappers Contexto 1 (Regras = Lista/Não Grid)
+            let mappers1HTML = "";
+            mappers1HTML += createCardHTML("MAPPER: CLIENTE", "M1", 
+`OBJETIVO: Segurança
+---
+ENTRADA (Entity) -> SAÍDA (DTO)
+
+1. Copiar: id, nome, email
+2. IGNORAR: senha_hash, cpf, endereco
+3. Calcular: primeiro_nome = nome.split(' ')[0]`, true);
+
+            mappers1HTML += createCardHTML("MAPPER: PRODUTO", "M2", 
+`OBJETIVO: Lucro Oculto
+---
+ENTRADA (Entity) -> SAÍDA (DTO)
+
+1. Copiar: id, nome, sku, preco_venda
+2. IGNORAR: custo_aquisicao
+3. Transformar: 
+   Se estoque > 0 -> "Disponível"
+   Se estoque = 0 -> "Indisponível"`, true);
+
+           mappers1HTML += createCardHTML("MAPPER: PEDIDO", "M3", 
+`OBJETIVO: Resumo
+---
+ENTRADA (Entity) -> SAÍDA (DTO)
+
+1. Formatar Data: "dd/mm/aaaa"
+2. Traduzir Status:
+   "PENDENTE" -> "Aguardando Pagamento"
+3. IGNORAR: gateway_transacao`, true);
+
+            html += renderSection("Regras de Mapeamento (Contexto 1)", mappers1HTML, false);
+
+
+            // --- CONTEXTO 2 ---
+
+            // Cursos (Entidade = Grid)
+            let cursosHTML = "";
+            ["Sistemas de Informação", "Engenharia de Software"].forEach((c, idx) => {
+                 const content = `<strong>id:</strong> ${idx+1}
+<strong>nome_oficial:</strong> "${c}"
+<strong>codigo_mec:</strong> "${randomInt(10000,99999)}"
+<strong>carga_horaria:</strong> 3600
+<strong>coordenador_id:</strong> ${randomInt(1,10)}`;
+                 cursosHTML += createCardHTML("TB_CURSO", idx+1, content);
+            });
+            html += renderSection("Contexto 2: Cursos (2)", cursosHTML, true);
+
+            // Turmas (Entidade = Grid)
+            let turmasHTML = "";
+             ["1º Semestre A", "3º Semestre B", "5º Semestre A"].forEach((t, idx) => {
+                 const content = `<strong>id:</strong> ${idx+10}
+<strong>codigo:</strong> "T-${2023}-${idx+1}"
+<strong>descricao:</strong> "${t}"
+<strong>curso_id:</strong> ${randomInt(1,2)}
+<strong>sala:</strong> "B-${randomInt(1,10)}"`;
+                 turmasHTML += createCardHTML("TB_TURMA", idx+10, content);
+            });
+            html += renderSection("Contexto 2: Turmas (3)", turmasHTML, true);
+
+            // Alunos (Entidade = Grid)
+            let studentsHTML = "";
+            for(let i=1; i<=96; i++) {
+                const name = generateName();
+                const content = `<strong>ra:</strong> ${20230000 + i}
+<strong>nome_civil:</strong> "${name}"
+<strong>nome_social:</strong> ${Math.random() > 0.9 ? `"${name.split(' ')[0]} Social"` : "null"}
+<strong>cpf:</strong> "${generateCPF()}"
+<strong>data_nasc:</strong> "${randomDate()}"
+<strong>turma_id:</strong> ${randomArr([10, 11, 12])}
+<strong>status_financeiro:</strong> "${Math.random() > 0.8 ? 'INADIMPLENTE' : 'EM_DIA'}"`;
+                studentsHTML += createCardHTML("TB_ALUNO", i, content);
+            }
+            html += renderSection("Contexto 2: Alunos (96)", studentsHTML, true);
+
+             // Mappers Contexto 2 (Regras = Lista/Não Grid)
+            let mappers2HTML = "";
+            mappers2HTML += createCardHTML("MAPPER: ALUNO (Público)", "M4", 
+`OBJETIVO: Privacidade (LGPD)
+---
+ENTRADA (Entity) -> SAÍDA (DTO)
+
+1. Prioridade Nome:
+   Se tem nome_social -> Usar nome_social
+   Senão -> Usar nome_civil
+2. Ocultar: cpf, status_financeiro, data_nasc
+3. Exibir: ra, nome_exibicao, codigo_turma`, true);
+
+            mappers2HTML += createCardHTML("MAPPER: ALUNO (Financeiro)", "M5", 
+`OBJETIVO: Cobrança
+---
+ENTRADA (Entity) -> SAÍDA (DTO)
+
+1. Exibir: nome_civil, cpf, status_financeiro
+2. Regra:
+   Se status_financeiro == 'INADIMPLENTE'
+   -> flag "bloquear_renovacao": true`, true);
+
+            html += renderSection("Regras de Mapeamento (Contexto 2)", mappers2HTML, false);
+
+            document.getElementById('content-area').innerHTML = html;
+        }
+
+        regenerateData();
+    </script>
+</body>
+</html>
