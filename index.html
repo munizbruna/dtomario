@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade: Entidades e DTOs</title>
+    <!-- React Dependencies -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Fira+Code:wght@400;600&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        
+        /* Animation Classes */
+        .pulse-border { animation: pulseBorder 2s infinite; }
+        
+        @keyframes pulseBorder {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+    </style>
+</head>
+<body>
+    <header><a href="cards.html">Gerar Cards</a></header>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, Fragment } = React;
+
+        // --- Definição Manual e Segura dos Ícones ---
+        
+        function IconDatabase(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                    <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                    <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                </svg>
+            );
+        }
+
+        function IconArrowRight(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={props.className}>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+            );
+        }
+
+        function IconShieldCheck(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    <polyline points="9 12 11 14 15 10"></polyline>
+                </svg>
+            );
+        }
+
+        function IconSmartphone(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+                    <line x1="12" y1="18" x2="12.01" y2="18"></line>
+                </svg>
+            );
+        }
+
+        function IconShuffle(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+            );
+        }
+
+        function IconPlay(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+            );
+        }
+
+        function IconRotateCcw(props) {
+            return (
+                <svg xmlns="http://www.w3.org/2000/svg" width={props.size || 24} height={props.size || 24} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+            );
+        }
+
+        // --- Componentes da Aplicação ---
+
+        function Card({ title, type, color, content, icon: IconComponent, isActive, highlight }) {
+            const getBgColor = (c) => {
+                switch(c) {
+                    case 'yellow': return 'bg-yellow-100 border-yellow-400 text-yellow-900';
+                    case 'green': return 'bg-green-100 border-green-400 text-green-900';
+                    case 'blue': return 'bg-blue-100 border-blue-400 text-blue-900';
+                    case 'orange': return 'bg-orange-100 border-orange-400 text-orange-900';
+                    case 'red': return 'bg-red-100 border-red-400 text-red-900';
+                    default: return 'bg-gray-100 border-gray-400';
+                }
+            };
+
+            const activeClass = isActive ? 'scale-105 opacity-100 ring-4 ring-offset-2 ring-indigo-300' : 'opacity-60 scale-95';
+            const highlightClass = highlight ? 'pulse-border' : '';
+
+            return (
+                <div className={`relative w-64 p-4 rounded-xl border-2 shadow-lg transition-all duration-500 transform ${getBgColor(color)} ${activeClass} ${highlightClass}`}>
+                    <div className="flex items-center justify-between mb-3 border-b border-black/10 pb-2">
+                        <span className="font-bold text-sm uppercase tracking-wider">{type}</span>
+                        {IconComponent && <IconComponent size={20} />}
+                    </div>
+                    <h3 className="font-bold text-lg mb-2">{title}</h3>
+                    <div className="code-font text-xs bg-white/50 p-3 rounded-md min-h-[120px] whitespace-pre-wrap">
+                        {content}
+                    </div>
+                </div>
+            );
+        }
+
+        function Arrow({ label, active }) {
+            return (
+                <div className={`flex flex-col items-center mx-2 transition-opacity duration-500 ${active ? 'opacity-100' : 'opacity-20'}`}>
+                    <span className="text-xs font-bold text-gray-500 mb-1">{label}</span>
+                    <IconArrowRight size={32} className="text-gray-400" />
+                </div>
+            );
+        }
+
+        function App() {
+            const [currentScenario, setCurrentScenario] = useState('basic');
+            const [step, setStep] = useState(0);
+            
+            // Definição dos Dados dos Cenários
+            const scenarios = {
+                basic: {
+                    title: "1. Transformação Básica (GET)",
+                    description: "O Servidor lê do banco, o Mapper traduz e remove a senha, e o Cliente recebe o DTO.",
+                    type: 'output',
+                    steps: [
+                        { 
+                            msg: "Passo 1: O Banco de Dados recupera a Entidade Bruta.",
+                            active: ['entity'],
+                            data: {
+                                entity: "id: 101\nnome: 'João'\nsobrenome: 'Silva'\nsenha_hash: 'x8s7f'\nstatus: 1"
+                            }
+                        },
+                        { 
+                            msg: "Passo 2: O Mapper aplica as regras de tradução.",
+                            active: ['entity', 'mapper'],
+                            highlight: 'mapper',
+                            data: {
+                                mapper: "REGRA:\n1. nome + sobrenome -> nome_completo\n2. status 1 -> 'ATIVO'\n3. Remover senha"
+                            }
+                        },
+                        { 
+                            msg: "Passo 3: O DTO de Resposta é gerado limpo para o Cliente.",
+                            active: ['mapper', 'responseDto'],
+                            data: {
+                                responseDto: "id: 101\nnome_completo: 'João Silva'\nsituacao: 'ATIVO'"
+                            }
+                        }
+                    ]
+                },
+                flattening: {
+                    title: "2. O Desafio do Relacionamento (Flattening)",
+                    description: "A Entidade é complexa (lista de itens), mas o cliente só quer o resumo.",
+                    type: 'output',
+                    steps: [
+                        {
+                            msg: "Passo 1: Entidade Pedido carrega dados complexos e listas.",
+                            active: ['entity'],
+                            data: {
+                                entity: "id: 550\ncliente_id: 10\nitens: [\n {prod: 'Teclado', R$ 100},\n {prod: 'Mouse', R$ 50}\n]"
+                            }
+                        },
+                        {
+                            msg: "Passo 2: O Mapper soma os valores e simplifica a lista.",
+                            active: ['entity', 'mapper'],
+                            highlight: 'mapper',
+                            data: {
+                                mapper: "REGRA DE FLATTENING:\n1. Somar preços -> total\n2. Pegar apenas nome do item mais caro."
+                            }
+                        },
+                        {
+                            msg: "Passo 3: DTO de Resposta é entregue super leve (Mobile Friendly).",
+                            active: ['mapper', 'responseDto'],
+                            data: {
+                                responseDto: "id_pedido: 550\ntotal: 150\nitem_principal: 'Teclado'"
+                            }
+                        }
+                    ]
+                },
+                creation: {
+                    title: "3. Criação de Usuário (POST Padrão)",
+                    description: "O Frontend valida UX, mas o Backend valida SEGURANÇA (Zero Trust).",
+                    type: 'input', // fluxo reverso
+                    steps: [
+                        {
+                            msg: "Passo 1: O Frontend envia o DTO (pré-validado visualmente).",
+                            active: ['requestDto'],
+                            data: {
+                                requestDto: "nome: 'Maria'\nemail: 'maria@ex.com'\nsenha: '123456'\n(Front: 'Email parece ok, enviei!')"
+                            }
+                        },
+                        {
+                            msg: "Passo 2: O Backend checa de novo (Anti-Hacker).",
+                            active: ['requestDto', 'validator'],
+                            highlight: 'validator',
+                            data: {
+                                validator: "REGRA (BACKEND):\nNão confio no Front!\nRevalidando...\n\n1. Email válido? OK\n2. Senha > 5? OK\n\nSTATUS: APROVADO"
+                            }
+                        },
+                        {
+                            msg: "Passo 3: O Mapper transforma e protege os dados.",
+                            active: ['validator', 'mapper'],
+                            highlight: 'mapper',
+                            data: {
+                                mapper: "TRANSFORMAÇÃO:\n1. senha -> HASH ('x99#k')\n2. Definir 'ativo' = true\n3. Definir 'perfil' = 'USER'"
+                            }
+                        },
+                        {
+                            msg: "Passo 4: Entidade salva com auditoria (Created/Updated).",
+                            active: ['mapper', 'entity'],
+                            data: {
+                                entity: "id: 202 (Auto)\nnome: 'Maria'\nemail: 'maria@ex.com'\nsenha_hash: 'x99#k'\nativo: true\ncreated_at: NOW()\nupdated_at: NOW()"
+                            }
+                        }
+                    ]
+                }
+            };
+
+            const scenario = scenarios[currentScenario];
+            const currentStepData = scenario.steps[step];
+            
+            // Função auxiliar para persistir dados dos passos anteriores
+            const getPersistentData = (key) => {
+                for (let i = step; i >= 0; i--) {
+                    if (scenario.steps[i].data && scenario.steps[i].data[key]) {
+                        return scenario.steps[i].data[key];
+                    }
+                }
+                return null;
+            };
+            
+            // Dados dinâmicos baseados no histórico do passo atual
+            const data = {
+                entity: getPersistentData('entity') || "",
+                mapper: getPersistentData('mapper') || "Aguardando dados...",
+                dto: getPersistentData('responseDto') || getPersistentData('requestDto') || "",
+                validator: getPersistentData('validator') || "Verificando..."
+            };
+
+            const nextStep = () => {
+                if (step < scenario.steps.length - 1) setStep(step + 1);
+            };
+
+            const reset = () => {
+                setStep(0);
+            };
+
+            const changeScenario = (key) => {
+                setCurrentScenario(key);
+                setStep(0);
+            };
+
+            const isActive = (key) => currentStepData.active.includes(key);
+            const isHighlight = (key) => currentStepData.highlight === key;
+
+            return (
+                <div className="min-h-screen flex flex-col items-center py-10 px-4 max-w-6xl mx-auto">
+                    
+                    {/* Header */}
+                    <header className="text-center mb-10">
+                        <h1 className="text-3xl font-bold text-gray-800 mb-2 flex items-center justify-center gap-2">
+                            <IconDatabase className="text-indigo-600" />
+                            Atividade: Entidades vs. DTOs
+                        </h1>
+                        <p className="text-gray-600">Simulador Interativo da Arquitetura em Camadas</p>
+                    </header>
+
+                    {/* Controles de Cenário */}
+                    <div className="flex flex-wrap gap-4 mb-8 justify-center">
+                        <button 
+                            onClick={() => changeScenario('basic')}
+                            className={`px-4 py-2 rounded-lg font-semibold transition ${currentScenario === 'basic' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+                        >
+                            1. Básico (Saída)
+                        </button>
+                        <button 
+                            onClick={() => changeScenario('flattening')}
+                            className={`px-4 py-2 rounded-lg font-semibold transition ${currentScenario === 'flattening' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+                        >
+                            2. Flattening (Relatório)
+                        </button>
+                        <button 
+                            onClick={() => changeScenario('creation')}
+                            className={`px-4 py-2 rounded-lg font-semibold transition ${currentScenario === 'creation' ? 'bg-green-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100'}`}
+                        >
+                            3. Criação (POST Padrão)
+                        </button>
+                    </div>
+
+                    {/* Área de Informação do Cenário */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm w-full mb-8 border-l-4 border-indigo-500">
+                        <h2 className="text-xl font-bold text-gray-800">{scenario.title}</h2>
+                        <p className="text-gray-600 mb-4">{scenario.description}</p>
+                        <div className="flex items-center gap-4">
+                            <div className="bg-gray-100 px-4 py-2 rounded-md font-mono text-sm text-indigo-800 w-full">
+                                {currentStepData.msg}
+                            </div>
+                            <button 
+                                onClick={step < scenario.steps.length - 1 ? nextStep : reset}
+                                className="flex items-center gap-2 px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-md transition whitespace-nowrap"
+                            >
+                                {step < scenario.steps.length - 1 ? <Fragment><IconPlay size={16} /> Próximo Passo</Fragment> : <Fragment><IconRotateCcw size={16} /> Reiniciar</Fragment>}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Palco da Animação */}
+                    <div className="flex flex-col md:flex-row items-center justify-center gap-2 w-full overflow-x-auto pb-8">
+                        
+                        {scenario.type === 'input' ? (
+                            /* Fluxo de Entrada (POST) */
+                            <Fragment>
+                                <Card 
+                                    title="DTO de Criação" 
+                                    type="Cartão Azul" 
+                                    color="blue" 
+                                    icon={IconSmartphone}
+                                    content={data.dto}
+                                    isActive={isActive('requestDto')}
+                                />
+                                
+                                <Arrow label="Input" active={step >= 1} />
+
+                                <Card 
+                                    title="Validador" 
+                                    type="Segurança" 
+                                    color="red" 
+                                    icon={IconShieldCheck} 
+                                    content={data.validator}
+                                    isActive={isActive('validator')}
+                                    highlight={isHighlight('validator')}
+                                />
+
+                                <Arrow label="Validado" active={step >= 2} />
+
+                                <Card 
+                                    title="Mapper" 
+                                    type="Cartão Laranja" 
+                                    color="orange" 
+                                    icon={IconShuffle}
+                                    content={data.mapper}
+                                    isActive={isActive('mapper')}
+                                    highlight={isHighlight('mapper')}
+                                />
+
+                                <Arrow label="Mapeado" active={step >= 3} />
+
+                                <Card 
+                                    title="Entidade" 
+                                    type="Cartão Amarelo" 
+                                    color="yellow" 
+                                    icon={IconDatabase}
+                                    content={data.entity}
+                                    isActive={isActive('entity')}
+                                />
+                            </Fragment>
+                        ) : (
+                            /* Fluxo de Saída (Padrão) */
+                            <Fragment>
+                                <Card 
+                                    title="Entidade" 
+                                    type="Cartão Amarelo" 
+                                    color="yellow" 
+                                    icon={IconDatabase}
+                                    content={data.entity}
+                                    isActive={isActive('entity')}
+                                />
+
+                                <Arrow label="Leitura" active={step >= 1} />
+
+                                <Card 
+                                    title="Mapper" 
+                                    type="Cartão Laranja" 
+                                    color="orange" 
+                                    icon={IconShuffle}
+                                    content={data.mapper}
+                                    isActive={isActive('mapper')}
+                                    highlight={isHighlight('mapper')}
+                                />
+
+                                <Arrow label="Transformação" active={step >= 2} />
+
+                                <Card 
+                                    title="DTO de Resposta" 
+                                    type="Cartão Verde" 
+                                    color="green" 
+                                    icon={IconSmartphone}
+                                    content={data.dto}
+                                    isActive={isActive('responseDto')}
+                                />
+                            </Fragment>
+                        )}
+
+                    </div>
+
+                    {/* Legenda */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full mt-8 opacity-70">
+                        <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 bg-yellow-200 border border-yellow-500 rounded"></div> Entidade (Banco)</div>
+                        <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 bg-orange-200 border border-orange-500 rounded"></div> Mapper (Regras)</div>
+                        <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 bg-green-200 border border-green-500 rounded"></div> DTO Resposta (Cliente)</div>
+                        <div className="flex items-center gap-2 text-sm"><div className="w-4 h-4 bg-blue-200 border border-blue-500 rounded"></div> DTO Requisição (Input)</div>
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
