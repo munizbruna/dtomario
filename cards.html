@@ -193,17 +193,22 @@
             html += renderSection("Contexto 1: Pedidos (30)", ordersHTML, true);
 
             // Itens (Entidade = Grid)
+            // GERAÇÃO ATUALIZADA: 4 itens para cada um dos 30 pedidos
             let itemsHTML = "";
-            for(let i=1; i<=4; i++) {
-                const content = `<strong>id:</strong> ${i}
-<strong>pedido_id:</strong> ${5001}
+            let itemIdCounter = 1;
+            for(let orderId=5001; orderId<=5030; orderId++) {
+                for(let k=0; k<4; k++) {
+                    const content = `<strong>id:</strong> ${itemIdCounter}
+<strong>pedido_id:</strong> ${orderId}
 <strong>produto_id:</strong> ${randomInt(1,20)}
 <strong>quantidade:</strong> ${randomInt(1, 3)}
 <strong>preco_unitario:</strong> ${randomInt(100, 500)}.00
 <strong>desconto:</strong> 0.00`;
-                itemsHTML += createCardHTML("TB_ITEM_PEDIDO", i, content);
+                    itemsHTML += createCardHTML("TB_ITEM_PEDIDO", itemIdCounter, content);
+                    itemIdCounter++;
+                }
             }
-            html += renderSection("Contexto 1: Itens (Exemplos)", itemsHTML, true);
+            html += renderSection("Contexto 1: Itens do Pedido (120 itens / 4 por Pedido)", itemsHTML, true);
 
             // Mappers Contexto 1 (Regras = Lista/Não Grid)
             let mappers1HTML = "";
